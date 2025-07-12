@@ -1,79 +1,80 @@
-import os
-import glob
-import librosa
-import numpy as np
 import pandas as pd
+import os
+import numpy as np
+import librosa
 
-# Paths
-PROCESSED_DIR = os.path.join("dataset", "processed")
-FEATURES_DIR = os.path.join("dataset", "features", "raw")
-os.makedirs(FEATURES_DIR, exist_ok=True)
+# Path to the CSV files
+csv_path = os.path.join("dataset", "filtered", "train_filtered.csv")
+features_csv_path = os.path.join("dataset", "filtered", "train_filtered_features.csv")
 
-def extract_features(file_path):
-    y, sr = librosa.load(file_path, sr=None)
-    features = {}
+# Load the CSV
+df = pd.read_csv(csv_path)
 
-    # STFT
-    stft = np.abs(librosa.stft(y))
-    features['stft_mean'] = np.mean(stft)
-    features['stft_std'] = np.std(stft)
+# Prepare columns for all features
+df['stft_mean_logmag'] = np.nan
+num_mfcc = 13
+for i in range(1, num_mfcc + 1):
+    df[f'mfcc_{i}'] = np.nan
+df['rms_mean'] = np.nan
+df['spectral_centroid_mean'] = np.nan
+df['spectral_bandwidth_mean'] = np.nan
+df['spectral_rolloff_mean'] = np.nan
+df['zero_crossing_rate_mean'] = np.nan
 
-    # MFCC
-    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
-    for i in range(mfcc.shape[0]):
-        features[f'mfcc_{i+1}_mean'] = np.mean(mfcc[i])
-        features[f'mfcc_{i+1}_std'] = np.std(mfcc[i])
+for idx, row in df.iterrows():
+    ebird_code = row['ebird_code']
+    filename = row['filename']
+    mp3_path = os.path.join("dataset", "raw", "A-M", ebird_code, filename)
+    try:
+        # Load audio file
+        y, sr = librosa.load(mp3_path, sr=None)
+        # Compute STFT
+        stft = librosa.stft(y)
+        stft_mag = np.abs(stft)
+        stft_logmag = np.log1p(stft_mag)
+        mean_logmag = np.mean(stft_logmag)
+        df.at[idx, 'stft_mean_logmag'] = mean_logmag
+        print(f"Extracted STFT feature for {mp3_path}: mean log-magnitude = {mean_logmag:.4f}")
 
-    # RMS
-    rms = librosa.feature.rms(y=y)[0]
-    features['rms_mean'] = np.mean(rms)
-    features['rms_std'] = np.std(rms)
+        # Compute MFCCs
+        mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=num_mfcc)
+        mfccs_mean = np.mean(mfccs, axis=1)
+        for i in range(num_mfcc):
+            df.at[idx, f'mfcc_{i+1}'] = mfccs_mean[i]
+        print(f"Extracted MFCCs for {mp3_path}: {[round(val, 4) for val in mfccs_mean]}")
 
-    # Spectral centroid
-    centroid = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
-    features['centroid_mean'] = np.mean(centroid)
-    features['centroid_std'] = np.std(centroid)
+        # Compute RMS
+        rms = librosa.feature.rms(y=y)
+        rms_mean = np.mean(rms)
+        df.at[idx, 'rms_mean'] = rms_mean
+        print(f"Extracted RMS for {mp3_path}: mean RMS = {rms_mean:.4f}")
 
-    # Spectral bandwidth
-    bandwidth = librosa.feature.spectral_bandwidth(y=y, sr=sr)[0]
-    features['bandwidth_mean'] = np.mean(bandwidth)
-    features['bandwidth_std'] = np.std(bandwidth)
+        # Compute Spectral Centroid
+        spectral_centroid = librosa.feature.spectral_centroid(y=y, sr=sr)
+        spectral_centroid_mean = np.mean(spectral_centroid)
+        df.at[idx, 'spectral_centroid_mean'] = spectral_centroid_mean
+        print(f"Extracted Spectral Centroid for {mp3_path}: mean = {spectral_centroid_mean:.4f}")
 
-    # Spectral roll-off
-    rolloff = librosa.feature.spectral_rolloff(y=y, sr=sr)[0]
-    features['rolloff_mean'] = np.mean(rolloff)
-    features['rolloff_std'] = np.std(rolloff)
+        # Compute Spectral Bandwidth
+        spectral_bandwidth = librosa.feature.spectral_bandwidth(y=y, sr=sr)
+        spectral_bandwidth_mean = np.mean(spectral_bandwidth)
+        df.at[idx, 'spectral_bandwidth_mean'] = spectral_bandwidth_mean
+        print(f"Extracted Spectral Bandwidth for {mp3_path}: mean = {spectral_bandwidth_mean:.4f}")
 
-    # Zero crossing rate
-    zcr = librosa.feature.zero_crossing_rate(y)[0]
-    features['zcr_mean'] = np.mean(zcr)
-    features['zcr_std'] = np.std(zcr)
+        # Compute Spectral Roll-Off
+        spectral_rolloff = librosa.feature.spectral_rolloff(y=y, sr=sr)
+        spectral_rolloff_mean = np.mean(spectral_rolloff)
+        df.at[idx, 'spectral_rolloff_mean'] = spectral_rolloff_mean
+        print(f"Extracted Spectral Roll-Off for {mp3_path}: mean = {spectral_rolloff_mean:.4f}")
 
-    return features
+        # Compute Zero Crossing Rate
+        zero_crossing_rate = librosa.feature.zero_crossing_rate(y)
+        zero_crossing_rate_mean = np.mean(zero_crossing_rate)
+        df.at[idx, 'zero_crossing_rate_mean'] = zero_crossing_rate_mean
+        print(f"Extracted Zero Crossing Rate for {mp3_path}: mean = {zero_crossing_rate_mean:.4f}")
 
-def infer_species_label(filename):
-    # Assumes filename format: species_label_someid.wav
-    base = os.path.basename(filename)
-    label = base.split('_')[0]
-    return label
+    except Exception as e:
+        print(f"Error processing {mp3_path}: {e}")
 
-def main():
-    audio_files = glob.glob(os.path.join(PROCESSED_DIR, "*.wav"))
-    if not audio_files:
-        print("No audio files found in dataset/processed/.")
-        return
-
-    all_features = []
-    for file_path in audio_files:
-        features = extract_features(file_path)
-        features['file'] = os.path.basename(file_path)
-        features['species'] = infer_species_label(file_path)
-        all_features.append(features)
-
-    df = pd.DataFrame(all_features)
-    output_path = os.path.join(FEATURES_DIR, "features.csv")
-    df.to_csv(output_path, index=False)
-    print(f"Extracted features saved to {output_path}")
-
-if __name__ == "__main__":
-    main()
+# Save updated features CSV
+df.to_csv(features_csv_path, index=False)
