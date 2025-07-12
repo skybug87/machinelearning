@@ -8,3 +8,7 @@ torchvision
 torchaudio
 pandas
 noisereduce
+kaggle
+kagglehub[pandas-datasets]
+librosa
+soundfile
