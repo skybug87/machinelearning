@@ -58,42 +58,43 @@ AUDIO_CONFIG = {
 # ========================================
 # 1. STRATIFIED TRAIN/VALIDATION/TEST SPLIT
 # ========================================
-print(f"\n{'='*50}")
-print("STRATIFIED DATA SPLIT:")
-print("="*50)
-
-# First split: train+val vs test (80/20)
-X = filtered_df[['download_url', 'filename', 'ebird_code']].copy()
-y = filtered_df['class_id'].copy()
-
-X_temp, X_test, y_temp, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
-)
-
-# Second split: train vs validation (75/25 of remaining = 60/20 of total)
-X_train, X_val, y_train, y_val = train_test_split(
-    X_temp, y_temp, test_size=0.25, random_state=42, stratify=y_temp
-)
-
-print(f"Data split completed:")
-print(f"  Training set:   {len(X_train):,} samples ({len(X_train)/len(filtered_df)*100:.1f}%)")
-print(f"  Validation set: {len(X_val):,} samples ({len(X_val)/len(filtered_df)*100:.1f}%)")
-print(f"  Test set:       {len(X_test):,} samples ({len(X_test)/len(filtered_df)*100:.1f}%)")
-
-# Verify class distribution is maintained
-print(f"\nClass distribution verification:")
-train_dist = y_train.value_counts().sort_index()
-val_dist = y_val.value_counts().sort_index()
-test_dist = y_test.value_counts().sort_index()
-
-sample_classes = train_dist.index[:5]
-for class_id in sample_classes:
-    species = selected_species[class_id]
-    total_samples = train_dist[class_id] + val_dist[class_id] + test_dist[class_id]
-    train_pct = train_dist[class_id] / total_samples * 100
-    val_pct = val_dist[class_id] / total_samples * 100
-    test_pct = test_dist[class_id] / total_samples * 100
-    print(f"  {species}: Train={train_pct:.1f}%, Val={val_pct:.1f}%, Test={test_pct:.1f}%")
+# The following block is now obsolete and replaced by loading precomputed splits from CSVs above.
+# print(f"\n{'='*50}")
+# print("STRATIFIED DATA SPLIT:")
+# print("="*50)
+#
+# # First split: train+val vs test (80/20)
+# X = filtered_df[['download_url', 'filename', 'ebird_code']].copy()
+# y = filtered_df['class_id'].copy()
+#
+# X_temp, X_test, y_temp, y_test = train_test_split(
+#     X, y, test_size=0.2, random_state=42, stratify=y
+# )
+#
+# # Second split: train vs validation (75/25 of remaining = 60/20 of total)
+# X_train, X_val, y_train, y_val = train_test_split(
+#     X_temp, y_temp, test_size=0.25, random_state=42, stratify=y_temp
+# )
+#
+# print(f"Data split completed:")
+# print(f"  Training set:   {len(X_train):,} samples ({len(X_train)/len(filtered_df)*100:.1f}%)")
+# print(f"  Validation set: {len(X_val):,} samples ({len(X_val)/len(filtered_df)*100:.1f}%)")
+# print(f"  Test set:       {len(X_test):,} samples ({len(X_test)/len(filtered_df)*100:.1f}%)")
+#
+# # Verify class distribution is maintained
+# print(f"\nClass distribution verification:")
+# train_dist = y_train.value_counts().sort_index()
+# val_dist = y_val.value_counts().sort_index()
+# test_dist = y_test.value_counts().sort_index()
+#
+# sample_classes = train_dist.index[:5]
+# for class_id in sample_classes:
+#     species = selected_species[class_id]
+#     total_samples = train_dist[class_id] + val_dist[class_id] + test_dist[class_id]
+#     train_pct = train_dist[class_id] / total_samples * 100
+#     val_pct = val_dist[class_id] / total_samples * 100
+#     test_pct = test_dist[class_id] / total_samples * 100
+#     print(f"  {species}: Train={train_pct:.1f}%, Val={val_pct:.1f}%, Test={test_pct:.1f}%")
 
 # ========================================
 # 2. AUDIO PREPROCESSING FUNCTIONS

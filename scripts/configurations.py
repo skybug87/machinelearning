@@ -4,4 +4,8 @@ CONFIG = {
     'MAX_DURATION': 20,              # Maximum duration in seconds (20 seconds) #crystal
     'MIN_DURATION': 1,                # Minimum duration in seconds, if its 0 then theres nothing #crystal
     'MIN_SAMPLES_PER_CLASS': 100,      # Minimum samples needed per species #crystal
+    'TRAIN_SPLIT': 0.6,                # Proportion of data for training
+    'VAL_SPLIT': 0.2,                  # Proportion for validation
+    'TEST_SPLIT': 0.2,                 # Proportion for test
+    'RANDOM_SEED': 42,                 # Random seed for reproducibility
 }
