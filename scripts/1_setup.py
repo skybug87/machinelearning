@@ -19,7 +19,7 @@ print("Step 1: Initial Setup and Data Exploration\n")
 
 # Load the metadata CSV
 print("Loading train_extended.csv...")
-df = pd.read_csv('/content/drive/MyDrive/machinelearning/train_extended.csv')
+df = pd.read_csv('./dataset/train_extended.csv')
 
 print(f"Dataset loaded successfully!")
 print(f"Shape: {df.shape}")

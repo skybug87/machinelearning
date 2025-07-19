@@ -6,3 +6,4 @@ scipy
 torch
 torchvision
 pandas
+seaborn
