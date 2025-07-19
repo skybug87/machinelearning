@@ -5,8 +5,10 @@ import numpy as np
 from pathlib import Path
 import random
 from tqdm import tqdm
-import urllib.request
+# Removed urllib.request (no longer downloading files)
 import pandas as pd
+
+from configurations import CONFIG
 
 print("=== STEP 3: AUDIO FILE VALIDATION & PROCESSING SETUP ===\n")
 
@@ -82,12 +84,7 @@ def find_audio_file_path(filename, base_dirs):
 
 
 # Check how many files we found
-files_found = filtered_df['url'].notna().sum()
-files_missing = filtered_df['url'].isna().sum()
-
-print(f"Files found: {files_found}")
-print(f"Files missing: {files_missing}")
-print(f"Success rate: {files_found/(files_found+files_missing)*100:.1f}%")
+# No longer checking URLs; will check for local files below.
 
 
 # ========================================
@@ -99,33 +96,22 @@ print("="*50)
 
 # Test loading a few random audio files
 
-filtered_df['download_url'] = filtered_df['url'].astype(str).str.rstrip('/') + '/download'
-
 sample_files = filtered_df.sample(n=min(5, len(filtered_df)))
-
-# Create a directory to store downloaded audio
-os.makedirs("temp_audio", exist_ok=True)
-
-
-
 
 audio_info = []
 
 for idx, row in sample_files.iterrows():
     try:
+        # Construct local file path
+        local_path = os.path.join(
+            "dataset", "raw", "A-M", str(row['ebird_code']), str(row['filename'])
+        )
 
-
-        # Get file name from URL
-        url = row['download_url']
-        filename = os.path.join("temp_audio", url.split("/")[-2] + '.mp3')
-
-        # Download if not already present
-        if not os.path.exists(filename):
-            urllib.request.urlretrieve(url, filename)
-            print(f"Downloaded: {filename}")
+        if not os.path.exists(local_path):
+            raise FileNotFoundError(f"File not found: {local_path}")
 
         # Load audio
-        audio, sr = librosa.load(filename, sr=None, duration=10)
+        audio, sr = librosa.load(local_path, sr=None, duration=10)
         duration = len(audio) / sr
         print("Testing audio file loading...")
 
@@ -140,17 +126,17 @@ for idx, row in sample_files.iterrows():
             'success': True
         }
         audio_info.append(info)
-        print(f" {row['download_url']}: {duration:.1f}s, {sr}Hz, shape={audio.shape}")
+        print(f" {local_path}: {duration:.1f}s, {sr}Hz, shape={audio.shape}")
 
     except Exception as e:
         info = {
-            'filename': row['url'],
+            'filename': row['filename'],
             'species': row['ebird_code'],
             'error': str(e),
             'success': False
         }
         audio_info.append(info)
-        print(f" {row['url']}: Error - {str(e)}")
+        print(f" {row['filename']}: Error - {str(e)}")
 
 # ========================================
 # 4. DATASET SPLIT PREPARATION
@@ -209,7 +195,7 @@ print(f"\nExpected spectrogram shape: ({AUDIO_CONFIG['N_MELS']}, {expected_time_
 print(f"\n{'='*50}")
 print("STEP 3 SUMMARY:")
 print("="*50)
-print(f" Audio files validated: {files_found}/{files_found+files_missing} found")
+print(f" Audio files validated: {len(audio_info)} tested")
 print(f" Dataset ready: {len(filtered_df)} samples")
 print(f" Classes: {len(selected_species)} species")
 print(f" Class mapping created")
