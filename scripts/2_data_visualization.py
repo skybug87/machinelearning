@@ -1,6 +1,7 @@
 # Step 2: Data Visualization and Configuration Setup
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
 
 print("=== STEP 2: DATA VISUALIZATION & CONFIGURATION ===\n")
 
@@ -14,6 +15,10 @@ CONFIG = {
     'MIN_DURATION': 1,                # Minimum duration in seconds, if its 0 then theres nothing #crystal
     'MIN_SAMPLES_PER_CLASS': 100,      # Minimum samples needed per species #crystal
 }
+
+# Load the metadata CSV
+print("Loading train_extended.csv...")
+df = pd.read_csv('./dataset/train_extended.csv')
 
 print("CURRENT CONFIGURATION:")
 print("="*50)
@@ -101,7 +106,7 @@ filtered_df = df[df['ebird_code'].isin(top_153_unique.index)]
 
 
 print("filter data with top 153: ", top_153_unique)
-display(filtered_df)
+print(filtered_df)
 
 
 print("filter data with atleast 100 samples in 153: ")
@@ -109,7 +114,7 @@ print("filter data with atleast 100 samples in 153: ")
 filtered_df = filtered_df[filtered_df['ebird_code'].isin(valid_codes)]
 species_counts = filtered_df ['ebird_code'].value_counts()
 print(f"number of species  with 100 samples: ", species_counts.shape[0])
-display(filtered_df)
+print(filtered_df)
 
 updatedvalue_counts = filtered_df['ebird_code'].value_counts()
 print("updated species value counts sorted a to m: ", updatedvalue_counts)
@@ -125,20 +130,20 @@ print("="*50)
 filtered_df = filtered_df[filtered_df['duration'] < 20]
 species_counts = filtered_df ['ebird_code'].value_counts()
 print(f"number of species  with duration < 20: ", species_counts.shape[0])
-display(filtered_df)
+print(filtered_df)
 
 # Filter by rating
 filtered_df = filtered_df[filtered_df['rating'] > 3]
 species_counts = filtered_df['ebird_code'].value_counts()
 print(f"number of species  with rating > 3: ", species_counts.shape[0])
-display(filtered_df)
+print(filtered_df)
 
 # Remove rows where 'url' is missing or empty
 filtered_df = filtered_df[filtered_df['url'].notna() & (filtered_df['url'].str.strip() != '')]
 
 print(f"Remaining rows after removing missing/empty URLs: {len(filtered_df)}")
 print(f"number of species  that contain url data ", species_counts.shape[0])
-display(filtered_df)
+print(filtered_df)
 
 print(f"number of species COUNTS ", species_counts)
 
@@ -201,3 +206,5 @@ print(f"number of species COUNTS ", species_counts)
 # }
 
 print(f"\n Next step: Audio file validation and path checking")
+# Save the final filtered DataFrame to CSV
+filtered_df.to_csv('./dataset/filtered_df.csv', index=False)

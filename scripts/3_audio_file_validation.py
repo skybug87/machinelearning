@@ -6,8 +6,12 @@ from pathlib import Path
 import random
 from tqdm import tqdm
 import urllib.request
+import pandas as pd
 
 print("=== STEP 3: AUDIO FILE VALIDATION & PROCESSING SETUP ===\n")
+
+# Load the filtered DataFrame from CSV
+filtered_df = pd.read_csv('./dataset/filtered_df.csv')
 
 # # Use the filtered dataset from Step 2
 # # For this step, we'll work with the configuration from Step 2
