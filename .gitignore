@@ -3,3 +3,4 @@ dataset/**
 models/**
 !models/
 .venv/
+.kilocode/
