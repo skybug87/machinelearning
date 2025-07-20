@@ -11,3 +11,5 @@ tensorflow[and-cuda]
 tensorflow_hub
 librosa
 tqdm
+soundfile
+noisereduce
