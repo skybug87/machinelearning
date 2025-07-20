@@ -25,12 +25,20 @@ import tensorflow_hub as hub
 embeddings_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'dataset', 'embeddings')
 os.makedirs(embeddings_dir, exist_ok=True)
 
+# Directory for YAMNet spectrograms
+yamnet_spec_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'dataset', 'yamnet_spectrograms')
+os.makedirs(yamnet_spec_dir, exist_ok=True)
+
 # Load YAMNet model once
 yamnet_model = hub.load('https://tfhub.dev/google/yamnet/1')
 
 # Add new column for YAMNet embedding paths
 df_copy['yamnet_embedding_path_original'] = pd.NA
 df_copy['yamnet_embedding_path_reduced'] = pd.NA
+
+# Add new columns for YAMNet spectrogram paths
+df_copy['yamnet_spectrogram_path_original'] = pd.NA
+df_copy['yamnet_spectrogram_path_reduced'] = pd.NA
 
 # Collect all audio paths to process
 audio_paths = []
@@ -65,9 +73,9 @@ for idx, row in tqdm(df_copy.iterrows(), total=df_copy.shape[0], desc="Processin
             try:
                 # Preprocess for YAMNet: load at 16kHz, 3s, pad/truncate, normalize [-1,1]
                 yamnet_sr = 16000
-                yamnet_duration = 5.0
+                yamnet_duration = 10.0
                 y_yamnet, _ = librosa.load(audio_path, sr=yamnet_sr, duration=yamnet_duration)
-                # Pad or truncate to 5 seconds
+                # Pad or truncate to 10 seconds
                 target_len = int(yamnet_sr * yamnet_duration)
                 if len(y_yamnet) < target_len:
                     y_yamnet = np.pad(y_yamnet, (0, target_len - len(y_yamnet)), mode='constant')
@@ -90,6 +98,15 @@ for idx, row in tqdm(df_copy.iterrows(), total=df_copy.shape[0], desc="Processin
                 df_copy.at[idx, emb_col] = emb_path
             except Exception as emb_e:
                 print(f"YAMNet embedding failed for {audio_path}: {emb_e}")
+
+            # --- Save YAMNet spectrogram ---
+            try:
+                yamnet_spec_path = os.path.join(yamnet_spec_dir, f"{basename}_yamnet_spec.npy")
+                np.save(yamnet_spec_path, spectrogram.numpy())
+                spec_col_yamnet = 'yamnet_spectrogram_path_original' if col == 'filename_original' else 'yamnet_spectrogram_path_reduced'
+                df_copy.at[idx, spec_col_yamnet] = yamnet_spec_path
+            except Exception as spec_e:
+                print(f"YAMNet spectrogram save failed for {audio_path}: {spec_e}")
 
         except Exception as e:
             print(f"Failed for {audio_path}: {e}")
@@ -136,4 +153,25 @@ for col, label, out_img in [
     plt.tight_layout()
     plt.savefig('outputs/first_spectrogram.png')
     plt.close()
+
+# --- Save first YAMNet spectrograms as images ---
+for col, label, out_img in [
+    ('yamnet_spectrogram_path_original', 'Original YAMNet Spectrogram', 'outputs/first_yamnet_spectrogram_original.png'),
+    ('yamnet_spectrogram_path_reduced', 'Reduced YAMNet Spectrogram', 'outputs/first_yamnet_spectrogram_reduced.png')
+]:
+    paths = df_copy[col].dropna().tolist()
+    if paths:
+        spec_path = paths[0]
+        if os.path.exists(spec_path):
+            spec = np.load(spec_path)
+            plt.figure(figsize=(10, 4))
+            plt.imshow(spec, aspect='auto', origin='lower', cmap='magma')
+            plt.title(label)
+            plt.xlabel('Time')
+            plt.ylabel('YAMNet Feature')
+            plt.colorbar(format='%+2.0f')
+            plt.tight_layout()
+            plt.savefig(out_img)
+            plt.close()
+
 df_copy.to_csv('dataset/numeric_features_with_spectrograms.csv')

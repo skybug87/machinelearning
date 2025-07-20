@@ -10,7 +10,16 @@ df = pd.read_csv(input_path)
 
 # Columns to exclude from normalization
 exclude_cols = [
-    'source', 'filename_original', 'filename_reduced', 'ebird_code', 'spectrogram_path_original', 'spectrogram_path_reduced', 'yamnet_embedding_path_original', 'yamnet_embedding_path_reduced',
+    'source',
+    'filename_original',
+    'filename_reduced',
+    'ebird_code',
+    'spectrogram_path_original',
+    'spectrogram_path_reduced',
+    'yamnet_embedding_path_original',
+    'yamnet_embedding_path_reduced',
+    'yamnet_spectrogram_path_original',
+    'yamnet_spectrogram_path_reduced',
 ]
 feature_cols = [col for col in df.columns if col not in exclude_cols]
 

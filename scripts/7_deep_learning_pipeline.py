@@ -65,7 +65,7 @@ def load_split_csvs(dataset_dir):
 
 # (Removed: merge_with_spectrogram_paths)
 
-def load_spectrogram_arrays(df, spectrogram_col='spectrogram_path_original'):
+def load_spectrogram_arrays(df, spectrogram_col='yamnet_spectrogram_path_reduced'):
     """
     Load spectrogram .npy arrays for each row in the DataFrame.
 
@@ -135,57 +135,26 @@ def create_cnn_model(input_shape, num_classes):
         tf.keras.Model: Compiled CNN model (uncompiled)
     """
     model = Sequential([
+
         layers.Input(shape=input_shape),
+        layers.Conv2D(64, (3, 3), padding='same'),
         layers.BatchNormalization(),
-
-        # Block 1
-        layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
-        layers.BatchNormalization(),
+        layers.Activation('relu'),
         layers.MaxPooling2D((2, 2)),
-        layers.Conv2D(128, (3, 3), activation='relu', padding='same'),
+        
+        layers.Conv2D(128, (3, 3), padding='same'),
         layers.BatchNormalization(),
+        layers.Activation('relu'),
         layers.MaxPooling2D((4, 4)),
-        layers.Dropout(0.25),
-
-        # Block 2
-        # layers.Conv2D(128, (3, 3), activation='relu', padding='same'),
-        # layers.BatchNormalization(),
-        # layers.Conv2D(128, (3, 3), activation='relu', padding='same'),
-        # layers.BatchNormalization(),
-        # layers.MaxPooling2D((4, 4)),
-        # layers.Dropout(0.25),
-
-        # Block 3
-        # layers.Conv2D(256, (3, 3), activation='relu', padding='same'),
-        # layers.BatchNormalization(),
-        # layers.Conv2D(256, (3, 3), activation='relu', padding='same'),
-        # layers.MaxPooling2D((2, 2)),
-        # layers.Dropout(0.25),
-
-        # Block 4
-        layers.Conv2D(256, (3, 3), activation='relu', padding='same'),
+        
+        layers.Conv2D(256, (3, 3), padding='same'),
         layers.BatchNormalization(),
-        layers.Conv2D(512, (3, 3), activation='relu', padding='same'),
-        layers.BatchNormalization(),
+        layers.Activation('relu'),
         layers.MaxPooling2D((2, 2)),
-        layers.Dropout(0.25),
-
-        # Global pooling and dense layers
+        
         layers.GlobalAveragePooling2D(),
-        layers.BatchNormalization(),
-
-        layers.Dense(1024, activation='relu'),
-        layers.BatchNormalization(),
-        layers.Dropout(0.5),
-
-        layers.Dense(512, activation='relu'),
-        layers.BatchNormalization(),
-        layers.Dropout(0.5),
-
         layers.Dense(256, activation='relu'),
-        layers.BatchNormalization(),
         layers.Dropout(0.3),
-
         layers.Dense(num_classes, activation='softmax')
     ])
     return model
@@ -380,12 +349,13 @@ def save_class_mapping(label2idx, filepath):
 # Plotting Utilities
 # =========================
 
-def plot_and_save_loss(history, filepath):
+def plot_and_save_loss(history, filepath, title_info=""):
     """
     Plot training and validation loss curves and save to file.
     Args:
         history (tf.keras.callbacks.History): Training history object.
         filepath (str): Path to save the plot image.
+        title_info (str): Additional info to include in the plot title.
     """
     hist = history.history
     plt.figure(figsize=(8, 6))
@@ -393,14 +363,17 @@ def plot_and_save_loss(history, filepath):
     plt.plot(hist['val_loss'], label='Validation Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
-    plt.title('Training and Validation Loss')
+    if title_info:
+        plt.title(f'Training and Validation Loss - {title_info}')
+    else:
+        plt.title('Training and Validation Loss')
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
     plt.savefig(filepath)
     plt.close()
 
-def plot_and_save_confusion_matrix(y_true, y_pred, class_names, filepath, accuracy=None):
+def plot_and_save_confusion_matrix(y_true, y_pred, class_names, filepath, accuracy=None, title_info=""):
     """
     Plot and save confusion matrix.
     Args:
@@ -409,15 +382,22 @@ def plot_and_save_confusion_matrix(y_true, y_pred, class_names, filepath, accura
         class_names (list): List of class names.
         filepath (str): Path to save the plot image.
         accuracy (float, optional): Total accuracy to display in the title.
+        title_info (str): Additional info to include in the plot title.
     """
     cm = confusion_matrix(y_true, y_pred)
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
     fig, ax = plt.subplots(figsize=(10, 8))
     disp.plot(ax=ax, cmap='Blues', xticks_rotation=45)
     if accuracy is not None:
-        plt.title(f'Confusion Matrix (Accuracy: {accuracy:.4f})')
+        if title_info:
+            plt.title(f'Confusion Matrix - {title_info} (Accuracy: {accuracy:.4f})')
+        else:
+            plt.title(f'Confusion Matrix (Accuracy: {accuracy:.4f})')
     else:
-        plt.title('Confusion Matrix')
+        if title_info:
+            plt.title(f'Confusion Matrix - {title_info}')
+        else:
+            plt.title('Confusion Matrix')
     plt.tight_layout()
     plt.savefig(filepath)
     plt.close()
@@ -430,7 +410,7 @@ if __name__ == "__main__":
     dataset_dir = "./dataset"
     output_dir = "./outputs"
     models_dir = "./models"
-    epochs = 50
+    epochs = 100
 
     os.makedirs(output_dir, exist_ok=True)
     os.makedirs(models_dir, exist_ok=True)
@@ -464,11 +444,11 @@ if __name__ == "__main__":
     # =========================
     # Normalize spectrograms (zero mean, unit variance using train stats)
     # =========================
-    # mean = X_train.mean()
-    # std = X_train.std()
-    # X_train = (X_train - mean) / (std + 1e-8)
-    # X_val = (X_val - mean) / (std + 1e-8)
-    # X_test = (X_test - mean) / (std + 1e-8)
+    mean = X_train.mean()
+    std = X_train.std()
+    X_train = (X_train - mean) / (std + 1e-8)
+    X_val = (X_val - mean) / (std + 1e-8)
+    X_test = (X_test - mean) / (std + 1e-8)
     
     
     # Build datasets (default batch size)
@@ -494,7 +474,7 @@ if __name__ == "__main__":
     save_class_mapping(label2idx, os.path.join(output_dir, "cnn_class_mapping.csv"))
 
     # Plot and save loss curves
-    plot_and_save_loss(history, os.path.join(output_dir, "cnn_loss_curve.png"))
+    plot_and_save_loss(history, os.path.join(output_dir, "cnn_loss_curve.png"), title_info="CNN")
 
     # Confusion matrix and accuracy for test set
     y_true = []
@@ -507,7 +487,7 @@ if __name__ == "__main__":
     class_names = list(label2idx.keys())
     total_accuracy = np.mean(np.array(y_true) == np.array(y_pred))
     plot_and_save_confusion_matrix(
-        y_true, y_pred, class_names, os.path.join(output_dir, "cnn_confusion_matrix.png"), accuracy=total_accuracy
+        y_true, y_pred, class_names, os.path.join(output_dir, "cnn_confusion_matrix.png"), accuracy=total_accuracy, title_info="CNN"
     )
     print(f"Test set total accuracy: {total_accuracy:.4f}")
 
@@ -555,7 +535,7 @@ if __name__ == "__main__":
         save_class_mapping(label2idx, os.path.join(output_dir, "yamnet_class_mapping.csv"))
 
         # Plot and save loss curves
-        plot_and_save_loss(history_yam, os.path.join(output_dir, "yamnet_loss_curve.png"))
+        plot_and_save_loss(history_yam, os.path.join(output_dir, "yamnet_loss_curve.png"), title_info="YAMNet")
 
         # Confusion matrix and accuracy for test set
         y_true_yam = []
@@ -568,7 +548,7 @@ if __name__ == "__main__":
         class_names_yam = list(label2idx.keys())
         total_accuracy_yam = np.mean(np.array(y_true_yam) == np.array(y_pred_yam))
         plot_and_save_confusion_matrix(
-            y_true_yam, y_pred_yam, class_names_yam, os.path.join(output_dir, "yamnet_confusion_matrix.png"), accuracy=total_accuracy_yam
+            y_true_yam, y_pred_yam, class_names_yam, os.path.join(output_dir, "yamnet_confusion_matrix.png"), accuracy=total_accuracy_yam, title_info="YAMNet"
         )
         print(f"YAMNet test set total accuracy: {total_accuracy_yam:.4f}")
         print("YAMNet training complete. Model and artifacts saved.")
