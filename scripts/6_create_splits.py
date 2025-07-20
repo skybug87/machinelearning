@@ -3,11 +3,11 @@ from sklearn.model_selection import train_test_split
 from configurations import CONFIG
 
 # Load filtered DataFrame
-filtered_df = pd.read_csv('dataset/filtered_df.csv', index_col=0)
+df = pd.read_csv('dataset/normalized_features_with_spectrograms.csv', index_col=0)
 
 # Features and labels
-X = filtered_df[['title', 'filename']]
-y = filtered_df[['ebird_code']]
+X = df.drop(columns=['ebird_code'])
+y = df[['ebird_code']]
 
 # First split: train (TRAIN_SPLIT), temp (1-TRAIN_SPLIT)
 X_train, X_temp, y_train, y_temp = train_test_split(

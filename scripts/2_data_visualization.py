@@ -93,22 +93,26 @@ filtered_df = df[df['rating'] >= CONFIG['MIN_RATING_THRESHOLD']].copy()
 species_counts = filtered_df['ebird_code'].value_counts()
 print(f"Number of species after rating filter: {species_counts.shape[0]}")
 
-# Filter out any ebird_code with less than MIN_SAMPLES_PER_CLASS samples
-valid_species = species_counts[species_counts >= CONFIG['MIN_SAMPLES_PER_CLASS']].index
-filtered_df = filtered_df[filtered_df['ebird_code'].isin(valid_species)].copy()
-print(f"Number of species after sample count filter: {filtered_df['ebird_code'].nunique()}")
-
 # Filter by duration
-# filtered_df = filtered_df[filtered_df['duration'] <= 20]
-# species_counts = filtered_df ['ebird_code'].value_counts()
-# print(f"number of species  with duration < 20: ", species_counts.shape[0])
+filtered_df = filtered_df[filtered_df['duration'] <= CONFIG['MAX_DURATION']].copy()
+species_counts = filtered_df ['ebird_code'].value_counts()
+print(f"number of species  with duration < {CONFIG['MAX_DURATION']}: ", species_counts.shape[0])
 
 # select the top 30 species by count
-top_species = species_counts.head(30).index.tolist()
+top_species = species_counts.head(CONFIG['NUM_CLASSES']).index.tolist()
 filtered_df = filtered_df[filtered_df['ebird_code'].isin(top_species)].copy()
+# For each of the top 30 species, keep only the best 100 samples by rating
+filtered_df = (
+    filtered_df.sort_values(['ebird_code', 'rating'], ascending=[True, False])
+    .groupby('ebird_code')
+    .head(100)
+    .reset_index(drop=True)
+)
 updatedvalue_counts = filtered_df['ebird_code'].value_counts()
-print("Top 30 species value counts sorted: ", updatedvalue_counts)
+print("Top 30 species value counts sorted (after limiting to best 100 by rating): ", updatedvalue_counts)
 
-print(f"\n Next step: Audio file validation and path checking")
+
+
+print("\n Next step: Audio file validation and path checking")
 # Save the final filtered DataFrame to CSV
 filtered_df.to_csv('./dataset/filtered_df.csv', index=False)
