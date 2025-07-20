@@ -151,9 +151,6 @@ features_df['spectral_rolloff_mean_reduced'] = np.nan
 features_df['zero_crossing_rate_mean'] = np.nan
 features_df['zero_crossing_rate_mean_reduced'] = np.nan
 
-print("=== STEP 2: FEATURE EXTRACTION FROM AUDIO FILES ===\n")
-
-
 def extract_features_for_file(audio_path, idx, suffix=""):
     try:
         y, sr = librosa.load(audio_path, sr=None)
@@ -199,7 +196,7 @@ def extract_features_for_file(audio_path, idx, suffix=""):
         print(f"Error extracting features for {audio_path}: {e}")
         pass
 
-print("=== STEP 2: FEATURE EXTRACTION FROM AUDIO FILES ===\n")
+print("=== STEP 3 - Part 2: FEATURE EXTRACTION FROM AUDIO FILES ===\n")
 for idx, row in tqdm(features_df.iterrows(), total=features_df.shape[0], desc="Extracting features"):
     ebird_code = row['ebird_code']
     original_path = row['filename_original']

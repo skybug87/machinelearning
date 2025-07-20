@@ -38,14 +38,58 @@ for idx, row in tqdm(df_copy.iterrows(), total=df_copy.shape[0], desc="Processin
             y, sr = librosa.load(audio_path, sr=None)
             # Generate mel spectrogram
             mel_spec = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, n_fft=2048, hop_length=512, power=2.0)
+            # Resize spectrogram to fixed shape (128, 432) for consistency with deep learning pipeline
+            import tensorflow as tf
+            mel_spec_resized = tf.image.resize(mel_spec[..., np.newaxis], [128, 432]).numpy().squeeze()
             # Save as .npy in dataset/spectrograms/
             basename = os.path.splitext(os.path.basename(audio_path))[0]
             out_path = os.path.join(spectrograms_dir, f"{basename}_mel.npy")
-            np.save(out_path, mel_spec)
+            np.save(out_path, mel_spec_resized)
             # Record the spectrogram path in the copy
             df_copy.at[idx, spec_col] = out_path
         except Exception as e:
             print(f"Failed for {audio_path}: {e}")
 
 # Save the updated DataFrame copy to a new CSV
+# Plot and save the first spectrogram as an image
+import matplotlib.pyplot as plt
+
+# Find the first available spectrogram file path
+first_spec_path = None
+for col in ['spectrogram_path_original', 'spectrogram_path_reduced']:
+    paths = df_copy[col].dropna().tolist()
+    if paths:
+        first_spec_path = paths[0]
+        break
+
+if first_spec_path and os.path.exists(first_spec_path):
+    spec = np.load(first_spec_path)
+# Plot and save the first original and reduced spectrograms as images
+for col, label, out_img in [
+    ('spectrogram_path_original', 'Original Mel Spectrogram', 'outputs/first_spectrogram_original.png'),
+    ('spectrogram_path_reduced', 'Reduced Mel Spectrogram', 'outputs/first_spectrogram_reduced.png')
+]:
+    paths = df_copy[col].dropna().tolist()
+    if paths:
+        spec_path = paths[0]
+        if os.path.exists(spec_path):
+            spec = np.load(spec_path)
+            plt.figure(figsize=(10, 4))
+            plt.imshow(spec, aspect='auto', origin='lower', cmap='magma')
+            plt.title(label)
+            plt.xlabel('Time')
+            plt.ylabel('Mel Frequency')
+            plt.colorbar(format='%+2.0f dB')
+            plt.tight_layout()
+            plt.savefig(out_img)
+            plt.close()
+    plt.figure(figsize=(10, 4))
+    plt.imshow(spec, aspect='auto', origin='lower', cmap='magma')
+    plt.title('First Mel Spectrogram')
+    plt.xlabel('Time')
+    plt.ylabel('Mel Frequency')
+    plt.colorbar(format='%+2.0f dB')
+    plt.tight_layout()
+    plt.savefig('outputs/first_spectrogram.png')
+    plt.close()
 df_copy.to_csv('dataset/numeric_features_with_spectrograms.csv')
