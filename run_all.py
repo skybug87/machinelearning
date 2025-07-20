@@ -10,6 +10,7 @@ SCRIPTS = [
     "5_normalize_features.py",
     "6_create_splits.py",
     "7_deep_learning_pipeline.py",
+    "8_traditional_pipeline.py",
 ]
 
 def main():
