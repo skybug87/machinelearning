@@ -137,3 +137,146 @@ plt.tight_layout()
 plt.savefig('./outputs/traditional_model_accuracies.png')
 plt.close()
 print("Saved accuracy comparison plot to ./outputs/traditional_model_accuracies.png")
+
+# --- Additional: Subset Experiments (First 3 and 15 unique y_train classes) ---
+
+def run_subset_experiment(label_subset, subset_name):
+    # Filter splits to only include samples with labels in label_subset
+    mask_train = y_train.isin(label_subset)
+    mask_val = y_val.isin(label_subset)
+    mask_test = y_test.isin(label_subset)
+
+    X_tr_sub = X_train[mask_train].values
+    y_tr_sub = y_train[mask_train].values
+    X_va_sub = X_val[mask_val].values
+    y_va_sub = y_val[mask_val].values
+    X_te_sub = X_test[mask_test].values
+    y_te_sub = y_test[mask_test].values
+
+    print(f"\n--- Subset: {subset_name} ({len(label_subset)} classes) ---")
+    print("Train shape:", X_tr_sub.shape, "Test shape:", X_te_sub.shape)
+
+    subset_accuracies = {}
+
+    # Random Forest
+    RF_pipe = Pipeline([
+        ('scaler', StandardScaler()),
+        ('rf', RandomForestClassifier(n_estimators=200, random_state=42))
+    ])
+    RF_pipe.fit(X_tr_sub, y_tr_sub)
+    pred = RF_pipe.predict(X_te_sub)
+    rf_acc = accuracy_score(y_te_sub, pred)
+    subset_accuracies['Random Forest'] = rf_acc
+    print("RF accuracy:", rf_acc)
+    print(classification_report(y_te_sub, pred))
+
+    # SGD Classifier
+    sgd_pipe = Pipeline([
+        ('scale', StandardScaler()),
+        ('sgd', SGDClassifier(
+            loss='log_loss',
+            learning_rate='optimal',
+            max_iter=1000, tol=1e-3,
+            random_state=42))
+    ])
+    sgd_pipe.fit(X_tr_sub, y_tr_sub)
+    pred_sgd = sgd_pipe.predict(X_te_sub)
+    sgd_acc = accuracy_score(y_te_sub, pred_sgd)
+    subset_accuracies['SGD'] = sgd_acc
+    print("SGD Accuracy:", sgd_acc)
+    print(classification_report(y_te_sub, pred_sgd))
+
+    # Gaussian Naive Bayes
+    nb = GaussianNB()
+    nb.fit(X_tr_sub, y_tr_sub)
+    pred_nb = nb.predict(X_te_sub)
+    nb_acc = accuracy_score(y_te_sub, pred_nb)
+    subset_accuracies['Naive Bayes'] = nb_acc
+    print("NB Accuracy:", nb_acc)
+    print(classification_report(y_te_sub, pred_nb))
+
+    # Decision Tree
+    dt = DecisionTreeClassifier(random_state=42)
+    dt.fit(X_tr_sub, y_tr_sub)
+    pred_dt = dt.predict(X_te_sub)
+    dt_acc = accuracy_score(y_te_sub, pred_dt)
+    subset_accuracies['Decision Tree'] = dt_acc
+    print("Decision Tree Accuracy:", dt_acc)
+    print(classification_report(y_te_sub, pred_dt))
+
+    # KNN
+    knn_pipe = Pipeline([
+        ('scale', StandardScaler()),
+        ('knn', KNeighborsClassifier(n_neighbors=5))
+    ])
+    knn_pipe.fit(X_tr_sub, y_tr_sub)
+    pred_knn = knn_pipe.predict(X_te_sub)
+    knn_acc = accuracy_score(y_te_sub, pred_knn)
+    subset_accuracies['KNN'] = knn_acc
+    print("KNN Accuracy:", knn_acc)
+    print(classification_report(y_te_sub, pred_knn))
+
+    # SVM
+    svm_pipe = Pipeline([
+        ('scale', StandardScaler()),
+        ('svm', SVC(kernel='rbf', C=1.0, random_state=42))
+    ])
+    svm_pipe.fit(X_tr_sub, y_tr_sub)
+    pred_svm = svm_pipe.predict(X_te_sub)
+    svm_acc = accuracy_score(y_te_sub, pred_svm)
+    subset_accuracies['SVM'] = svm_acc
+    print("SVM Accuracy:", svm_acc)
+    print(classification_report(y_te_sub, pred_svm))
+
+    # Return the accuracy dictionary instead of plotting
+    return subset_accuracies
+
+# Run for first 3, 15, and 30 unique y_train values and collect results
+first3_labels = y_train.unique()[:3]
+first5_labels = y_train.unique()[:5]
+first30_labels = y_train.unique()[:30]
+
+acc_3 = run_subset_experiment(first3_labels, "3-bird")
+acc_5 = run_subset_experiment(first5_labels, "5-bird")
+acc_30 = run_subset_experiment(first30_labels, "30-bird")
+
+# Combine results into a DataFrame for plotting
+import matplotlib.pyplot as plt
+
+all_models = sorted(set(acc_3) | set(acc_5) | set(acc_30))
+subset_names = ['3', '5', '30']
+acc_dict = {'3': acc_3, '5': acc_5, '30': acc_30}
+
+data = []
+for model in all_models:
+    row = [acc_dict[s].get(model, 0) for s in subset_names]
+    data.append(row)
+
+df = pd.DataFrame(data, index=all_models, columns=subset_names)
+
+# Plot: x-axis=model, grouped bars=subset, legend=subset
+import numpy as np
+
+bar_width = 0.22
+# Enforce consistent model order
+ordered_models = ['SGD', 'SVM', 'KNN', 'Decision Tree', 'Random Forest', 'Naive Bayes']
+x = np.arange(len(ordered_models))
+colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
+subset_labels = ['3 birds', '5 birds', '30 birds']
+
+plt.figure(figsize=(12, 6))
+for idx, subset in enumerate(subset_names):
+    accs = [acc_dict[subset].get(model, 0) for model in ordered_models]
+    plt.bar(x + idx * bar_width, accs, width=bar_width, label=subset_labels[idx], color=colors[idx])
+    for i, acc in enumerate(accs):
+        plt.text(x[i] + idx * bar_width, acc + 0.01, f"{acc*100:.1f}%", ha='center', va='bottom', fontsize=9)
+
+plt.xticks(x + bar_width, ordered_models, rotation=30)
+plt.ylabel('Accuracy')
+plt.title('Traditional Model Accuracies by Subset Size')
+plt.ylim(0, 1)
+plt.legend(title='Subset')
+plt.tight_layout()
+plt.savefig('./outputs/traditional_model_accuracies_combined.png')
+plt.close()
+print("Saved combined accuracy comparison plot to ./outputs/traditional_model_accuracies_combined.png")
