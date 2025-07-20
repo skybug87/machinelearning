@@ -38,6 +38,8 @@ import logging
 import json
 import argparse
 
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 # =========================
 # 2. Data Loading Utilities
 # =========================
@@ -139,28 +141,32 @@ def create_cnn_model(input_shape, num_classes):
         # Block 1
         layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
         layers.BatchNormalization(),
-        layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
         layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(128, (3, 3), activation='relu', padding='same'),
+        layers.BatchNormalization(),
+        layers.MaxPooling2D((4, 4)),
         layers.Dropout(0.25),
 
         # Block 2
-        layers.Conv2D(128, (3, 3), activation='relu', padding='same'),
-        layers.BatchNormalization(),
-        layers.Conv2D(128, (3, 3), activation='relu', padding='same'),
-        layers.MaxPooling2D((2, 2)),
-        layers.Dropout(0.25),
+        # layers.Conv2D(128, (3, 3), activation='relu', padding='same'),
+        # layers.BatchNormalization(),
+        # layers.Conv2D(128, (3, 3), activation='relu', padding='same'),
+        # layers.BatchNormalization(),
+        # layers.MaxPooling2D((4, 4)),
+        # layers.Dropout(0.25),
 
         # Block 3
-        layers.Conv2D(256, (3, 3), activation='relu', padding='same'),
-        layers.BatchNormalization(),
-        layers.Conv2D(256, (3, 3), activation='relu', padding='same'),
-        layers.MaxPooling2D((2, 2)),
-        layers.Dropout(0.25),
+        # layers.Conv2D(256, (3, 3), activation='relu', padding='same'),
+        # layers.BatchNormalization(),
+        # layers.Conv2D(256, (3, 3), activation='relu', padding='same'),
+        # layers.MaxPooling2D((2, 2)),
+        # layers.Dropout(0.25),
 
         # Block 4
-        layers.Conv2D(512, (3, 3), activation='relu', padding='same'),
+        layers.Conv2D(256, (3, 3), activation='relu', padding='same'),
         layers.BatchNormalization(),
         layers.Conv2D(512, (3, 3), activation='relu', padding='same'),
+        layers.BatchNormalization(),
         layers.MaxPooling2D((2, 2)),
         layers.Dropout(0.25),
 
@@ -257,7 +263,7 @@ def train_cnn_model(model, train_ds, val_ds, epochs=50, patience=15, checkpoint_
     logging.info("CNN training complete.")
     return history
 
-def train_yamnet_model(model, train_ds, val_ds, epochs=50, patience=7, checkpoint_path=None):
+def train_yamnet_model(model, train_ds, val_ds, epochs=50, patience=15, checkpoint_path=None):
     """
     Train a YAMNet classifier model using Keras with standard callbacks.
 
@@ -371,6 +377,52 @@ def save_class_mapping(label2idx, filepath):
     pd.DataFrame(list(label2idx.items()), columns=['label', 'index']).to_csv(filepath, index=False)
 
 # =========================
+# Plotting Utilities
+# =========================
+
+def plot_and_save_loss(history, filepath):
+    """
+    Plot training and validation loss curves and save to file.
+    Args:
+        history (tf.keras.callbacks.History): Training history object.
+        filepath (str): Path to save the plot image.
+    """
+    hist = history.history
+    plt.figure(figsize=(8, 6))
+    plt.plot(hist['loss'], label='Train Loss')
+    plt.plot(hist['val_loss'], label='Validation Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(filepath)
+    plt.close()
+
+def plot_and_save_confusion_matrix(y_true, y_pred, class_names, filepath, accuracy=None):
+    """
+    Plot and save confusion matrix.
+    Args:
+        y_true (array-like): True labels.
+        y_pred (array-like): Predicted labels.
+        class_names (list): List of class names.
+        filepath (str): Path to save the plot image.
+        accuracy (float, optional): Total accuracy to display in the title.
+    """
+    cm = confusion_matrix(y_true, y_pred)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
+    fig, ax = plt.subplots(figsize=(10, 8))
+    disp.plot(ax=ax, cmap='Blues', xticks_rotation=45)
+    if accuracy is not None:
+        plt.title(f'Confusion Matrix (Accuracy: {accuracy:.4f})')
+    else:
+        plt.title('Confusion Matrix')
+    plt.tight_layout()
+    plt.savefig(filepath)
+    plt.close()
+
+# =========================
 # 7. Run Script
 # =========================
 
@@ -378,11 +430,15 @@ if __name__ == "__main__":
     dataset_dir = "./dataset"
     output_dir = "./outputs"
     models_dir = "./models"
-    epochs = 40
+    epochs = 50
 
     os.makedirs(output_dir, exist_ok=True)
     os.makedirs(models_dir, exist_ok=True)
 
+    # ==================================================
+    # CNN Embedding Classifier Training and Evaluation
+    # ==================================================
+    print("CNN Classifier Training and Evaluation:")
     # Load splits
     splits = load_split_csvs(dataset_dir)
     train_df = splits['train']
@@ -398,13 +454,23 @@ if __name__ == "__main__":
     y_train, label2idx = create_label_mapping(train_df['ebird_code'])
     y_val, _ = create_label_mapping(val_df['ebird_code'])
     y_test, _ = create_label_mapping(test_df['ebird_code'])
-
+    
     # Expand dims if needed (ensure channel last)
     if X_train.ndim == 3:
         X_train = np.expand_dims(X_train, -1)
         X_val = np.expand_dims(X_val, -1)
         X_test = np.expand_dims(X_test, -1)
-
+    
+    # =========================
+    # Normalize spectrograms (zero mean, unit variance using train stats)
+    # =========================
+    # mean = X_train.mean()
+    # std = X_train.std()
+    # X_train = (X_train - mean) / (std + 1e-8)
+    # X_val = (X_val - mean) / (std + 1e-8)
+    # X_test = (X_test - mean) / (std + 1e-8)
+    
+    
     # Build datasets (default batch size)
     train_ds = get_tf_data(X_train, y_train)
     val_ds = get_tf_data(X_val, y_val, shuffle=False)
@@ -427,4 +493,85 @@ if __name__ == "__main__":
     save_metrics(metrics, os.path.join(output_dir, "cnn_metrics.csv"))
     save_class_mapping(label2idx, os.path.join(output_dir, "cnn_class_mapping.csv"))
 
+    # Plot and save loss curves
+    plot_and_save_loss(history, os.path.join(output_dir, "cnn_loss_curve.png"))
+
+    # Confusion matrix and accuracy for test set
+    y_true = []
+    y_pred = []
+    for X_batch, y_batch in test_ds:
+        preds = model.predict(X_batch, verbose=0)
+        preds = np.argmax(preds, axis=1)
+        y_true.extend(y_batch.numpy())
+        y_pred.extend(preds)
+    class_names = list(label2idx.keys())
+    total_accuracy = np.mean(np.array(y_true) == np.array(y_pred))
+    plot_and_save_confusion_matrix(
+        y_true, y_pred, class_names, os.path.join(output_dir, "cnn_confusion_matrix.png"), accuracy=total_accuracy
+    )
+    print(f"Test set total accuracy: {total_accuracy:.4f}")
+
     print("Training complete. Model saved to ./models and artifacts saved to ./outputs.")
+
+    # ==================================================
+    # YAMNet Embedding Classifier Training and Evaluation
+    # ==================================================
+    print("YAMNet Classifier Training and Evaluation:")
+
+    # Load YAMNet embeddings (expects columns: 'yamnet_embedding_path')
+    def load_yamnet_embeddings(df, embedding_col='yamnet_embedding_path_reduced'):
+        yamnet_embeds = []
+        for path in df[embedding_col]:
+            arr = np.load(path)
+            yamnet_embeds.append(arr)
+        return np.stack(yamnet_embeds)
+
+    # Check if yamnet_embedding_path exists in DataFrame
+    if 'yamnet_embedding_path_reduced' in train_df.columns:
+        X_train_yam = load_yamnet_embeddings(train_df)
+        X_val_yam = load_yamnet_embeddings(val_df)
+        X_test_yam = load_yamnet_embeddings(test_df)
+
+        # Normalize embeddings (optional, but often beneficial)
+        mean_yam = X_train_yam.mean()
+        std_yam = X_train_yam.std()
+        X_train_yam = (X_train_yam - mean_yam) / (std_yam + 1e-8)
+        X_val_yam = (X_val_yam - mean_yam) / (std_yam + 1e-8)
+        X_test_yam = (X_test_yam - mean_yam) / (std_yam + 1e-8)
+
+        train_ds_yam = get_tf_data(X_train_yam, y_train)
+        val_ds_yam = get_tf_data(X_val_yam, y_val, shuffle=False)
+        test_ds_yam = get_tf_data(X_test_yam, y_test, shuffle=False)
+
+        yamnet_model = create_yamnet_classifier(num_classes, embedding_size=X_train_yam.shape[1])
+        history_yam = train_yamnet_model(yamnet_model, train_ds_yam, val_ds_yam, epochs=100)
+
+        metrics_yam = evaluate_model(yamnet_model, test_ds_yam)
+
+        # Save YAMNet model, history, metrics, and label mapping
+        save_keras_model(yamnet_model, os.path.join(models_dir, "yamnet_model.keras"))
+        save_training_history(history_yam, os.path.join(output_dir, "yamnet_history.csv"))
+        save_metrics(metrics_yam, os.path.join(output_dir, "yamnet_metrics.csv"))
+        save_class_mapping(label2idx, os.path.join(output_dir, "yamnet_class_mapping.csv"))
+
+        # Plot and save loss curves
+        plot_and_save_loss(history_yam, os.path.join(output_dir, "yamnet_loss_curve.png"))
+
+        # Confusion matrix and accuracy for test set
+        y_true_yam = []
+        y_pred_yam = []
+        for X_batch, y_batch in test_ds_yam:
+            preds = yamnet_model.predict(X_batch, verbose=0)
+            preds = np.argmax(preds, axis=1)
+            y_true_yam.extend(y_batch.numpy())
+            y_pred_yam.extend(preds)
+        class_names_yam = list(label2idx.keys())
+        total_accuracy_yam = np.mean(np.array(y_true_yam) == np.array(y_pred_yam))
+        plot_and_save_confusion_matrix(
+            y_true_yam, y_pred_yam, class_names_yam, os.path.join(output_dir, "yamnet_confusion_matrix.png"), accuracy=total_accuracy_yam
+        )
+        print(f"YAMNet test set total accuracy: {total_accuracy_yam:.4f}")
+        print("YAMNet training complete. Model and artifacts saved.")
+
+    else:
+        print("YAMNet embedding paths not found in split CSVs. Skipping YAMNet classifier training.")

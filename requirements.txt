@@ -8,5 +8,6 @@ torchvision
 pandas
 seaborn
 tensorflow[and-cuda]
+tensorflow_hub
 librosa
 tqdm
