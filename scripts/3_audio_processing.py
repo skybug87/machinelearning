@@ -43,7 +43,7 @@ def validate_and_process_audio(row):
         print(f"Attempting to download from url: {row['url']}")
         # Download the file if it doesn't exist
         try:
-            urllib.request.urlretrieve(row['url'], file_path)
+            urllib.request.urlretrieve(row['url'] + '/download', file_path)
             print(f"Downloaded: {file_path}")
         except Exception as e:
             print(f"Failed to download {file_path}: {e}")
