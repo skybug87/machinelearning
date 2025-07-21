@@ -23,7 +23,16 @@ y_test  = pd.read_csv("dataset/y_test.csv", index_col=0).squeeze()
 
 # Drop excluded columns (from scripts/5_normalize_features.py)
 exclude_cols = [
-    'source', 'filename_original', 'filename_reduced', 'ebird_code', 'spectrogram_path_original', 'spectrogram_path_reduced',
+    'source',
+    'filename_original',
+    'filename_reduced',
+    'ebird_code',
+    'spectrogram_path_original',
+    'spectrogram_path_reduced',
+    'yamnet_embedding_path_original',
+    'yamnet_embedding_path_reduced',
+    'yamnet_spectrogram_path_original',
+    'yamnet_spectrogram_path_reduced',
 ]
 X_train = X_train.drop(columns=[col for col in exclude_cols if col in X_train.columns])
 X_val   = X_val.drop(columns=[col for col in exclude_cols if col in X_val.columns])

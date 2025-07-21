@@ -1,4 +1,3 @@
-# Step 3: Audio File Validation and Processing Setup
 import os
 import librosa
 import numpy as np
