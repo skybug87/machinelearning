@@ -9,11 +9,10 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.pipeline import Pipeline
+import matplotlib.pyplot as plt
 
 # Load normalized numeric features and splits
 print("Loading numeric feature splits...")
-
-import matplotlib.pyplot as plt
 
 X_train = pd.read_csv("dataset/X_train.csv", index_col=0)
 X_val   = pd.read_csv("dataset/X_val.csv", index_col=0)
@@ -138,7 +137,9 @@ plt.savefig('./outputs/traditional_model_accuracies.png')
 plt.close()
 print("Saved accuracy comparison plot to ./outputs/traditional_model_accuracies.png")
 
-# --- Additional: Subset Experiments (First 3 and 15 unique y_train classes) ---
+################################################################
+# Subset experiments for first 3, 5, and 30 unique labels
+################################################################
 
 def run_subset_experiment(label_subset, subset_name):
     # Filter splits to only include samples with labels in label_subset
@@ -148,8 +149,8 @@ def run_subset_experiment(label_subset, subset_name):
 
     X_tr_sub = X_train[mask_train].values
     y_tr_sub = y_train[mask_train].values
-    X_va_sub = X_val[mask_val].values
-    y_va_sub = y_val[mask_val].values
+    # X_va_sub = X_val[mask_val].values # not used
+    # y_va_sub = y_val[mask_val].values # not used
     X_te_sub = X_test[mask_test].values
     y_te_sub = y_test[mask_test].values
 
@@ -241,8 +242,6 @@ acc_5 = run_subset_experiment(first5_labels, "5-bird")
 acc_30 = run_subset_experiment(first30_labels, "30-bird")
 
 # Combine results into a DataFrame for plotting
-import matplotlib.pyplot as plt
-
 all_models = sorted(set(acc_3) | set(acc_5) | set(acc_30))
 subset_names = ['3', '5', '30']
 acc_dict = {'3': acc_3, '5': acc_5, '30': acc_30}
@@ -254,12 +253,8 @@ for model in all_models:
 
 df = pd.DataFrame(data, index=all_models, columns=subset_names)
 
-# Plot: x-axis=model, grouped bars=subset, legend=subset
-import numpy as np
-
 bar_width = 0.22
-# Enforce consistent model order
-ordered_models = ['SGD', 'SVM', 'KNN', 'Decision Tree', 'Random Forest', 'Naive Bayes']
+ordered_models = ['SGD', 'SVM', 'KNN', 'Decision Tree', 'Random Forest', 'Naive Bayes'] # Enforce consistent model order to match image from paper
 x = np.arange(len(ordered_models))
 colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
 subset_labels = ['3 birds', '5 birds', '30 birds']

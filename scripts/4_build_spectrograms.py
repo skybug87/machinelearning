@@ -1,7 +1,11 @@
 import pandas as pd
 import os 
-
 from tqdm import tqdm
+import matplotlib.pyplot as plt
+import numpy as np
+import librosa
+import tensorflow as tf
+import tensorflow_hub as hub
 
 # Load filtered DataFrame
 df = pd.read_csv('dataset/numeric_features.csv', index_col=0)
@@ -14,12 +18,6 @@ df_copy['spectrogram_path_reduced'] = pd.NA
 # create .datasets/spectrograms directory if it doesn't exist
 spectrograms_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'dataset', 'spectrograms')
 os.makedirs(spectrograms_dir, exist_ok=True)
-
-import numpy as np
-import librosa
-
-import tensorflow as tf
-import tensorflow_hub as hub
 
 # Directory for YAMNet embeddings
 embeddings_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'dataset', 'embeddings')
@@ -110,10 +108,6 @@ for idx, row in tqdm(df_copy.iterrows(), total=df_copy.shape[0], desc="Processin
 
         except Exception as e:
             print(f"Failed for {audio_path}: {e}")
-
-# Save the updated DataFrame copy to a new CSV
-# Plot and save the first spectrogram as an image
-import matplotlib.pyplot as plt
 
 # Find the first available spectrogram file path
 first_spec_path = None

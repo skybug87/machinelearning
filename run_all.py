@@ -4,7 +4,7 @@ import os
 
 SCRIPTS = [
     "1_setup.py",
-    "2_data_visualization.py",
+    "2_data_visualization_and_filtering.py",
     "3_audio_processing.py",
     "4_build_spectrograms.py",
     "5_normalize_features.py",

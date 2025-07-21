@@ -80,14 +80,7 @@ def validate_and_process_audio(row):
         # Apply noise reduction after cropping
         segment_reduced = apply_noise_reduction(segment, sr)
 
-        # original_path = os.path.join(
-        #     processed_dir, f"{ebird_code}_{target_filename}_original.wav"
-        # )
         sf.write(original_path, segment, sr, format='WAV', subtype='PCM_16')
-
-        # reduced_path = os.path.join(
-        #     processed_dir, f"{ebird_code}_{target_filename}_reduced.wav"
-        # )
         sf.write(reduced_path, segment_reduced, sr, format='WAV', subtype='PCM_16')
 
         return output_data
@@ -123,13 +116,13 @@ if not processed_df.empty and processed_df['ebird_code'].notnull().any():
     plt.title('Number of Samples per Species')
     plt.tight_layout()
     plt.savefig('./outputs/samples_per_species_histogram.png')
-    print(f"Histogram saved to './outputs/samples_per_species_histogram.png'")
+    print("Histogram saved to './outputs/samples_per_species_histogram.png'")
 else:
     print("No processed files to plot. Skipping histogram.")
 
 
 ##########################################################################################
-# Step 2: Extract Features from Processed Audio Files
+# Extract Features from Processed Audio Files
 ##########################################################################################
 features_df = processed_df.copy()
 
