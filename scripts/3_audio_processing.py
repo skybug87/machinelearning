@@ -41,7 +41,7 @@ def validate_and_process_audio(row):
     if not os.path.isfile(file_path):
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         print(f"File not found: {file_path}")
-        print(f"Attempting to download from url: {row['url']}")
+        print(f"Attempting to download from url: {row['url']}/download")
         # Download the file if it doesn't exist
         try:
             urllib.request.urlretrieve(row['url'] + '/download', file_path)
