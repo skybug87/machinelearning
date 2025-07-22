@@ -1,3 +1,6 @@
+# Script Lead: Crystal Matheny
+# Collaborators: Duncan Hord, Yehong Huang, Sepehr Goshayeshi
+
 import matplotlib.pyplot as plt
 import pandas as pd
 
