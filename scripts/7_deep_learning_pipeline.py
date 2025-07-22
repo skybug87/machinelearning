@@ -1,3 +1,6 @@
+# Script Lead: Duncan Hord
+# Collaborators: Yehong Huang, Crystal Matheny, Sepehr Goshayeshi
+
 import os
 import numpy as np
 import pandas as pd
