@@ -1,3 +1,6 @@
+# Script Lead: Sepehr Goshayeshi
+# Collaborators: Duncan Hord, Yehong Huang, Crystal Matheny
+
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import SGDClassifier
