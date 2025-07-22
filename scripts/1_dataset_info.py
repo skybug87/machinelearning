@@ -1,3 +1,6 @@
+# Script Lead: Crystal Matheny
+# Collaborators: Duncan Hord, Yehong Huang, Sepehr Goshayeshi
+
 # Step 1: Initial Setup and Data Exploration
 import pandas as pd
 import warnings
