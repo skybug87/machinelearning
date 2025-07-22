@@ -1,3 +1,6 @@
+# Script Lead: Yehong Huang
+# Collaborators: Duncan Hord, Crystal Matheny, Sepehr Goshayeshi
+
 import os
 import librosa
 import numpy as np
