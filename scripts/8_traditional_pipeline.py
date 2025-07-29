@@ -1,5 +1,4 @@
-# Script Lead: Sepehr Goshayeshi
-# Collaborators: Duncan Hord, Yehong Huang, Crystal Matheny
+# Authors: Sepehr Goshayeshi, Duncan Hord, Crystal Matheny, Yehong Huang
 
 import numpy as np
 import pandas as pd
