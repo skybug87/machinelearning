@@ -1,5 +1,4 @@
-# Script Lead: Duncan Hord
-# Collaborators: Yehong Huang, Crystal Matheny, Sepehr Goshayeshi
+# Authors: Sepehr Goshayeshi, Duncan Hord, Crystal Matheny, Yehong Huang
 
 import os
 import numpy as np
