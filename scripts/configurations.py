@@ -1,3 +1,5 @@
+# Authors: Sepehr Goshayeshi, Duncan Hord, Crystal Matheny, Yehong Huang
+
 CONFIG = {
     'MIN_RATING_THRESHOLD': 3.0,      # Filter recordings below this rating #crystal
     'NUM_CLASSES': 30,                # Number of bird species to use (3, 5, 30, or custom) this value should be calculated #crystal
