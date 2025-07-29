@@ -1,5 +1,4 @@
-# Script Lead: Yehong Huang
-# Collaborators: Duncan Hord, Crystal Matheny, Sepehr Goshayeshi
+# Authors: Sepehr Goshayeshi, Duncan Hord, Crystal Matheny, Yehong Huang
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
